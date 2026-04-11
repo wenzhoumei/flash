@@ -1,0 +1,76 @@
+.Dd April 11, 2026
+.Dt FLASH 1
+.Os
+.Sh NAME
+.Nm flash
+.Nd simple plaintext flashcard tool
+.Sh SYNOPSIS
+.Nm
+.Op Fl r
+.Ar deck
+.Nm
+.Op Fl r
+.Ar deck ...
+.Ar ident
+.Sh DESCRIPTION
+.Nm
+is a simple plain text flashcard tool for X.
+It reads decks in the form
+.Dq question:::answer
+and shows one card at a time in a centered X11 window.
+.Pp
+When a deck contains stack separators of the form
+.Dq \&\#\ SEP timestamp success/attempt[/total] ,
+.Nm
+studies only the bottom stack, meaning the cards directly above the last
+separator.
+The separator metadata belongs to the layer above it.
+The optional third number is written only when not all cards in that layer were
+attempted.
+At the end of the run it rewrites that separator and, if needed, appends a new
+bottom retry layer followed by a trailing
+.Dq \&\#\ SEP .
+.Pp
+If
+.Fl r
+is given,
+.Nm
+first drops every layer below the top one before studying.
+.Sh USAGE
+.Bl -tag -width Ds
+.It Em Keyboard commands
+.Bl -tag -width Ds
+.It Sy Space
+Flip the current card.
+.It Sy j
+Mark the current card remembered and go to the next card after it has been
+flipped once.
+.It Sy k
+Mark the current card failed and go to the next card after it has been flipped
+once.
+.It Sy x
+Quit early and save progress.
+.It Sy Escape
+Quit immediately without saving.
+.El
+.El
+.Sh FORMAT
+A deck file is made of one flashcard per line:
+.Bd -literal -offset indent
+What does CPU stand for?:::Central Processing Unit
+2 + 2:::4
+.Ed
+.Pp
+To store retry stacks inside the same file,
+.Nm
+also accepts separator lines:
+.Bd -literal -offset indent
+\&\#\ SEP 2026-04-11T22:00:00 3/5
+\&\#\ SEP 2026-04-11T22:00:00 1/2/3
+\&\#\ SEP
+.Ed
+.Sh CUSTOMIZATION
+.Nm
+can be customized by creating a custom config.h and (re)compiling the
+source code.
+This keeps it fast, secure and simple.
