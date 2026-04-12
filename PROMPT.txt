@@ -5,4 +5,4 @@ Rules:
 - Every card must be self-contained and understandable without the slides.
 - Make sure to cover all content, but skip admin and lecturer-specific
   content.
-- Do not refer to "the lecture", "the slide", or similar.
+- Do not refer to "the lecture", "the slide", "the demo", or similar.
