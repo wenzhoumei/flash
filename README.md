@@ -1,12 +1,7 @@
-flash is a simple plaintext flashcard tool.
-
-flash does not need databases, web stacks or any other fancy file format, it
-uses plaintext deck files to describe flashcards. Every line represents one
-flashcard in the form `question:::answer`.
-
-The flashcards are displayed in a simple X11 window. The content of each card
-is automatically scaled to fit the window and centered so you also don't have to
-worry about alignment. Instead you can really concentrate on recall.
+flash is a simple pure plaintext flashcard tool, designed to be used alongside
+LLMs to quickly generate some slopdecks and start cramming from them. Every
+line represents one flashcard in the form `question:::answer`. Wrong answers
+are appended in a stack-based in-place format for easy cramming.
 
 
 Dependencies
@@ -25,14 +20,20 @@ quit early with `x`, or press `Escape` to exit without saving anything.
 
 Usage
 
-	flash [-r] DECK
-	flash [-r] DECK ... IDENT
+	flash -h
+	flash -p
+	flash [-r] [-j | -k] DECK ...
 
-If one argument is given, it is treated as a single deck. If multiple arguments
-are given, all but the last are treated as decks, they are shuffled together,
-and the final argument is treated as the identifier shown in the window title.
-Each deck is still saved back to itself. `-r` resets each deck back to its top
-layer before studying it.
+`-h` prints usage. `-p` prints the compiled-in LLM deck-generation prompt.
+`-r` resets each deck back to its top layer before studying it.
+
+If one or more deck arguments are given, they are shuffled together for study.
+Each deck is still saved back to itself.
+
+By default, flash keeps only cards explicitly marked with `k` in the retry
+layer. `-j` instead keeps every card that was not explicitly marked with `j`,
+which includes wrong cards and cards left unseen when you exit early. The
+default is configurable in `config.h`.
 
 flash uses a stack-based in-place format. The active cards are always taken from
 the bottom of the stack, meaning the cards directly above the last separator. A
@@ -49,6 +50,9 @@ store that layer's metadata. If anything was missed or left unanswered, flash
 then appends the remaining cards and a new trailing `# SEP`. If you clear the
 entire bottom layer, flash removes it instead, unless it is the top layer of
 the file.
+
+In the default `-k` mode, "remaining cards" means only cards explicitly marked
+with `k`. In `-j` mode, it means every card not explicitly marked with `j`.
 
 A deck file could look like this:
 
@@ -70,7 +74,6 @@ If you then want to discard every retry layer and go back to just the top one,
 run:
 
 	flash -r DECK
-
 
 Development
 

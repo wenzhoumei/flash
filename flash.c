@@ -45,7 +45,13 @@ typedef struct {
 	int scr, w, h, uw, uh;
 } XWindow;
 
+enum {
+	KEEP_NOTJ,
+	KEEP_K,
+};
+
 #include "config.h"
+#include "prompt.h"
 
 static void die(const char *fmt, ...);
 static void *ecalloc(size_t n, size_t size);
@@ -58,6 +64,7 @@ static void draw(void);
 static XftFont *fitfont(const char *s, char ***lines, size_t *nlines, int *maxw);
 static void freelines(char **lines, size_t nlines);
 static int issep(const char *s);
+static int keepcard(const Card *c);
 static void loaddeck(const char *path, int reset);
 static void next(int ok);
 static void resetdeck(Deck *d);
@@ -67,13 +74,12 @@ static void shuffle(void);
 static int startswith(const char *s, const char *prefix);
 static int textwidth(XftFont *font, const char *s);
 static void timestamp(char *buf, size_t len);
-static void usage(void);
+static void usage(int status);
 static void wraptext(const char *s, XftFont *font, char ***lines, size_t *nlines, int *maxw);
 static void xinit(void);
 static void xloadfonts(void);
 
 static char *argv0;
-static char *ident;
 static Card **cards;
 static Deck *decks;
 static size_t cardcount, cardcap, cardidx;
@@ -83,7 +89,7 @@ static GC gc;
 static XftDraw *drawctx;
 static XftColor fg, bg;
 static XftFont *fonts[NUMFONTSCALES];
-static int running = 1, flipped = 0, dosave = 1, seenanswer = 0;
+static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, keepmode;
 
 void
 die(const char *fmt, ...)
@@ -136,9 +142,16 @@ startswith(const char *s, const char *prefix)
 }
 
 void
-usage(void)
+usage(int status)
 {
-	die("usage: %s [-r] deck | %s [-r] deck ... ident", argv0, argv0);
+	FILE *fp = status ? stderr : stdout;
+
+	fprintf(fp,
+	        "usage: %s -h\n"
+	        "       %s -p\n"
+	        "       %s [-r] [-j | -k] deck ...\n",
+	        argv0, argv0, argv0);
+	exit(status);
 }
 
 void
@@ -197,6 +210,14 @@ int
 issep(const char *s)
 {
 	return !strcmp(s, "# SEP") || startswith(s, "# SEP ");
+}
+
+int
+keepcard(const Card *c)
+{
+	if (keepmode == KEEP_NOTJ)
+		return c->state != 1;
+	return c->state == 2;
 }
 
 void
@@ -375,8 +396,8 @@ draw(void)
 	XftFont *font = fitfont(s, &lines, &nlines, &maxw);
 	fh = font->ascent + font->descent;
 
-	snprintf(title, sizeof(title), "flash: %s [%zu/%zu]%s",
-	         ident, cardidx + 1, cardcount, flipped ? " answer" : "");
+	snprintf(title, sizeof(title), "flash [%zu/%zu]%s",
+	         cardidx + 1, cardcount, flipped ? " answer" : "");
 	XStoreName(xw.dpy, xw.win, title);
 
 	XSetForeground(xw.dpy, gc, bg.pixel);
@@ -434,7 +455,7 @@ save(void)
 		d = &decks[i];
 		left = 0;
 		for (j = 0; j < d->ncards; j++)
-			if (d->cards[j]->state != 1)
+			if (keepcard(d->cards[j]))
 				left++;
 		if (d->att == (int)d->ncards)
 			snprintf(meta, sizeof(meta), "%d/%d", d->succ, d->att);
@@ -459,7 +480,7 @@ save(void)
 			fprintf(fp, "%s\n", d->lines[j]);
 		fprintf(fp, "# SEP %s %s\n", stamp, meta);
 		for (j = 0; j < d->ncards; j++) {
-			if (d->cards[j]->state == 1)
+			if (!keepcard(d->cards[j]))
 				continue;
 			fprintf(fp, "%s:::%s\n", d->cards[j]->q, d->cards[j]->a);
 		}
@@ -608,23 +629,30 @@ main(int argc, char *argv[])
 	setlocale(LC_CTYPE, "");
 	argv0 = argv[0];
 	if (argc < 2)
-		usage();
+		usage(1);
 
 	reset = 0;
-	argi = 1;
-	if (!strcmp(argv[argi], "-r")) {
-		reset = 1;
-		if (++argi >= argc)
-			usage();
+	keepmode = defaultkeep;
+	for (argi = 1; argi < argc && argv[argi][0] == '-' && argv[argi][1]; argi++) {
+		if (!strcmp(argv[argi], "-h")) {
+			usage(0);
+		} else if (!strcmp(argv[argi], "-p")) {
+			fputs(prompt, stdout);
+			return 0;
+		} else if (!strcmp(argv[argi], "-r")) {
+			reset = 1;
+		} else if (!strcmp(argv[argi], "-j")) {
+			keepmode = KEEP_NOTJ;
+		} else if (!strcmp(argv[argi], "-k")) {
+			keepmode = KEEP_K;
+		} else {
+			usage(1);
+		}
 	}
+	if (argi >= argc)
+		usage(1);
 
-	if (argc - argi == 1) {
-		ident = argv[argi];
-		ndecks = 1;
-	} else {
-		ident = argv[argc - 1];
-		ndecks = argc - argi - 1;
-	}
+	ndecks = argc - argi;
 
 	for (i = 0; i < ndecks; i++)
 		loaddeck(argv[argi + i], reset);

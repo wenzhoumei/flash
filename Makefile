@@ -17,10 +17,15 @@ options:
 config.h:
 	cp config.def.h config.h
 
+prompt.h: PROMPT.txt
+	{ printf 'static const char prompt[] =\n'; \
+	  sed 's/\\/\\\\/g; s/"/\\"/g; s/.*/"&\\n"/' PROMPT.txt; \
+	  printf ';\n'; } > prompt.h
+
 .c.o:
 	${CC} -c ${CFLAGS} $<
 
-${OBJ}: config.h config.mk
+${OBJ}: config.h config.mk prompt.h
 
 flash: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
@@ -29,11 +34,11 @@ cscope: ${SRC} config.h
 	cscope -R -b || echo cScope not installed
 
 clean:
-	rm -f flash ${OBJ} flash-${VERSION}.tar.gz
+	rm -f flash ${OBJ} flash-${VERSION}.tar.gz prompt.h
 
 dist: clean
 	mkdir -p flash-${VERSION}
-	cp -R LICENSE Makefile config.mk config.def.h flash.1 ${SRC} flash-${VERSION}
+	cp -R LICENSE Makefile config.mk config.def.h flash.1 PROMPT.txt ${SRC} flash-${VERSION}
 	tar -cf flash-${VERSION}.tar flash-${VERSION}
 	gzip flash-${VERSION}.tar
 	rm -rf flash-${VERSION}

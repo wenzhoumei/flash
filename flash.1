@@ -6,18 +6,28 @@
 .Nd simple plaintext flashcard tool
 .Sh SYNOPSIS
 .Nm
-.Op Fl r
-.Ar deck
+.Op Fl h
+.Nm
+.Op Fl p
 .Nm
 .Op Fl r
+.Op Fl j
+.Op Fl k
 .Ar deck ...
-.Ar ident
 .Sh DESCRIPTION
 .Nm
 is a simple plain text flashcard tool for X.
 It reads decks in the form
 .Dq question:::answer
 and shows one card at a time in a centered X11 window.
+.Pp
+If
+.Fl p
+is given,
+.Nm
+prints the LLM deck-generation prompt compiled from
+.Pa PROMPT.txt
+and exits.
 .Pp
 When a deck contains stack separators of the form
 .Dq \&\#\ SEP timestamp success/attempt[/total] ,
@@ -36,6 +46,44 @@ If
 is given,
 .Nm
 first drops every layer below the top one before studying.
+.Pp
+By default,
+.Nm
+keeps only cards explicitly marked with
+.Sy k
+in the retry layer.
+If
+.Fl j
+is given, it keeps every card not explicitly marked with
+.Sy j ,
+including unseen cards when exiting early.
+If
+.Fl k
+is given, it keeps only cards explicitly marked with
+.Sy k .
+.Pp
+If
+.Fl h
+is given,
+.Nm
+prints usage information and exits.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl h
+Print usage information and exit.
+.It Fl p
+Print the compiled-in LLM deck-generation prompt and exit.
+.It Fl j
+Keep every card not explicitly marked with
+.Sy j
+in the retry layer.
+.It Fl k
+Keep only cards explicitly marked with
+.Sy k
+in the retry layer.
+.It Fl r
+Reset each deck back to its top layer before studying.
+.El
 .Sh USAGE
 .Bl -tag -width Ds
 .It Em Keyboard commands

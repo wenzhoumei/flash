@@ -12,3 +12,5 @@ static const char *bgcolor = "#FFFFFF";
 
 static const float usablewidth = 0.75f;
 static const float usableheight = 0.75f;
+
+static const int defaultkeep = KEEP_K;
