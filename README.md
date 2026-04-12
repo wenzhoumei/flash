@@ -20,9 +20,10 @@ To get a little demo, just type
 	make && ./flash example.deck
 
 You can flip with `Space`, then mark remembered with `j` or failed with `k`.
-Press `x` to save and exit keeping only cards marked with `k`. Press `p` to
-save and exit keeping failed cards plus unseen cards. Press `Escape` to exit
-without saving anything.
+Press `b` to go back one card and undo its recorded answer. Press `x` to save
+and exit keeping only cards marked with `k`. Press `p` to save and exit
+keeping failed cards plus unseen cards. Press `Escape` to exit without saving
+anything.
 
 
 Usage

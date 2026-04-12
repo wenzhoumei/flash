@@ -61,6 +61,7 @@ static void addcard(Deck *d, const char *s);
 static void addline(Deck *d, const char *s);
 static void cleanup(void);
 static void draw(void);
+static void back(void);
 static XftFont *fitfont(const char *s, char ***lines, size_t *nlines, int *maxw);
 static void freelines(char **lines, size_t nlines);
 static int issep(const char *s);
@@ -415,6 +416,28 @@ draw(void)
 }
 
 void
+back(void)
+{
+	Card *c;
+
+	if (!cardidx)
+		return;
+	c = cards[cardidx - 1];
+	if (c->state == 1) {
+		c->deck->succ--;
+		c->deck->att--;
+	} else if (c->state == 2) {
+		c->deck->att--;
+	} else {
+		return;
+	}
+	c->state = 0;
+	cardidx--;
+	flipped = seenanswer = 0;
+	draw();
+}
+
+void
 next(int ok)
 {
 	cards[cardidx]->state = ok ? 1 : 2;
@@ -584,6 +607,8 @@ run(void)
 				next(1);
 			} else if (sym == XK_k && seenanswer) {
 				next(0);
+			} else if (sym == XK_b) {
+				back();
 			} else if (sym == XK_x) {
 				savemode = SAVE_FAILED;
 				running = 0;
