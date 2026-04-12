@@ -1,0 +1,4 @@
+config.h
+prompt.h
+*.o
+flash
