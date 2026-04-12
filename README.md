@@ -1,7 +1,12 @@
-flash is a simple pure plaintext flashcard tool, designed to be used alongside
-LLMs to quickly generate some slopdecks and start cramming from them. Every
-line represents one flashcard in the form `question:::answer`. Wrong answers
-are appended in a stack-based in-place format for easy cramming.
+flash is a simple pure plaintext flashcard tool designed for use alongside
+LLMs to rapidly generate and cram from slopdecks.
+
+Every line represents one flashcard in the form `question:::answer`. The simple
+plaintext-only format allows quick generation and iteration, for both humans
+and LLMs, while still being expressive enough for most use.
+
+Failed cards are tracked in-place as a retry stack, for an effective
+study-until-no-more-fails workflow.
 
 
 Dependencies
