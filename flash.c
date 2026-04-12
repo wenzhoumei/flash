@@ -55,7 +55,8 @@ static void addcard(Deck *d, const char *s);
 static void addline(Deck *d, const char *s);
 static void cleanup(void);
 static void draw(void);
-static XftFont *fitfont(const char *s, XGlyphInfo *ext);
+static XftFont *fitfont(const char *s, char ***lines, size_t *nlines, int *maxw);
+static void freelines(char **lines, size_t nlines);
 static int issep(const char *s);
 static void loaddeck(const char *path, int reset);
 static void next(int ok);
@@ -64,8 +65,10 @@ static void run(void);
 static void save(void);
 static void shuffle(void);
 static int startswith(const char *s, const char *prefix);
+static int textwidth(XftFont *font, const char *s);
 static void timestamp(char *buf, size_t len);
 static void usage(void);
+static void wraptext(const char *s, XftFont *font, char ***lines, size_t *nlines, int *maxw);
 static void xinit(void);
 static void xloadfonts(void);
 
@@ -275,19 +278,90 @@ shuffle(void)
 }
 
 XftFont *
-fitfont(const char *s, XGlyphInfo *ext)
+fitfont(const char *s, char ***lines, size_t *nlines, int *maxw)
 {
 	int i;
 
 	for (i = NUMFONTSCALES - 1; i >= 0; i--) {
-		XftTextExtentsUtf8(xw.dpy, fonts[i], (FcChar8 *)s, strlen(s), ext);
-		if ((int)ext->xOff <= xw.uw &&
-		    fonts[i]->ascent + fonts[i]->descent <= xw.uh)
-			break;
+		wraptext(s, fonts[i], lines, nlines, maxw);
+		if (*maxw <= xw.uw &&
+		    (int)(*nlines * (fonts[i]->ascent + fonts[i]->descent)) <= xw.uh)
+			return fonts[i];
+		freelines(*lines, *nlines);
 	}
-	LIMIT(i, 0, NUMFONTSCALES - 1);
-	XftTextExtentsUtf8(xw.dpy, fonts[i], (FcChar8 *)s, strlen(s), ext);
-	return fonts[i];
+	wraptext(s, fonts[0], lines, nlines, maxw);
+	return fonts[0];
+}
+
+void
+freelines(char **lines, size_t nlines)
+{
+	size_t i;
+
+	for (i = 0; i < nlines; i++)
+		free(lines[i]);
+	free(lines);
+}
+
+int
+textwidth(XftFont *font, const char *s)
+{
+	XGlyphInfo ext;
+
+	XftTextExtentsUtf8(xw.dpy, font, (FcChar8 *)s, strlen(s), &ext);
+	return ext.xOff;
+}
+
+void
+wraptext(const char *s, XftFont *font, char ***lines, size_t *nlines, int *maxw)
+{
+	char *buf, *cur, *next, *tok, **out = NULL;
+	char *saveptr = NULL;
+	size_t cap = 0, len;
+
+	*lines = NULL;
+	*nlines = 0;
+	*maxw = 0;
+	if (!*s)
+		return;
+
+	len = strlen(s) + 1;
+	buf = estrdup(s);
+	cur = ecalloc(len, 1);
+	next = ecalloc(len, 1);
+
+	for (tok = strtok_r(buf, " \t", &saveptr); tok; tok = strtok_r(NULL, " \t", &saveptr)) {
+		if (*cur)
+			snprintf(next, len, "%s %s", cur, tok);
+		else
+			snprintf(next, len, "%s", tok);
+		if (*cur && textwidth(font, next) > xw.uw) {
+			if (*nlines == cap) {
+				cap = cap ? 2 * cap : 8;
+				out = erealloc(out, cap * sizeof(*out));
+			}
+			out[(*nlines)++] = estrdup(cur);
+			if (textwidth(font, cur) > *maxw)
+				*maxw = textwidth(font, cur);
+			snprintf(cur, len, "%s", tok);
+		} else {
+			snprintf(cur, len, "%s", next);
+		}
+	}
+	if (*cur) {
+		if (*nlines == cap) {
+			cap = cap ? 2 * cap : 8;
+			out = erealloc(out, cap * sizeof(*out));
+		}
+		out[(*nlines)++] = estrdup(cur);
+		if (textwidth(font, cur) > *maxw)
+			*maxw = textwidth(font, cur);
+	}
+
+	free(next);
+	free(cur);
+	free(buf);
+	*lines = out;
 }
 
 void
@@ -295,11 +369,11 @@ draw(void)
 {
 	char title[256];
 	const char *s = flipped ? cards[cardidx]->a : cards[cardidx]->q;
-	XGlyphInfo ext;
-	XftFont *font = fitfont(s, &ext);
-	int fh = font->ascent + font->descent;
-	int x = (xw.w - (int)ext.xOff) / 2;
-	int y = (xw.h - fh) / 2 + font->ascent;
+	char **lines = NULL;
+	size_t i, nlines = 0;
+	int blockh, fh, maxw = 0, x, y;
+	XftFont *font = fitfont(s, &lines, &nlines, &maxw);
+	fh = font->ascent + font->descent;
 
 	snprintf(title, sizeof(title), "flash: %s [%zu/%zu]%s",
 	         ident, cardidx + 1, cardcount, flipped ? " answer" : "");
@@ -307,8 +381,15 @@ draw(void)
 
 	XSetForeground(xw.dpy, gc, bg.pixel);
 	XFillRectangle(xw.dpy, xw.win, gc, 0, 0, xw.w, xw.h);
-	if (*s)
-		XftDrawStringUtf8(drawctx, &fg, font, x, y, (FcChar8 *)s, strlen(s));
+	blockh = nlines * fh;
+	y = (xw.h - blockh) / 2 + font->ascent;
+	for (i = 0; i < nlines; i++) {
+		x = (xw.w - textwidth(font, lines[i])) / 2;
+		XftDrawStringUtf8(drawctx, &fg, font, x, y,
+		                  (FcChar8 *)lines[i], strlen(lines[i]));
+		y += fh;
+	}
+	freelines(lines, nlines);
 	XFlush(xw.dpy);
 }
 
