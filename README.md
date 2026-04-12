@@ -20,10 +20,10 @@ To get a little demo, just type
 	make && ./flash example.deck
 
 You can flip with `Space`, then mark remembered with `j` or failed with `k`.
-Press `b` to go back one card and undo its recorded answer. Press `x` to save
-and exit keeping only cards marked with `k`. Press `p` to save and exit
-keeping failed cards plus unseen cards. Press `Escape` to exit without saving
-anything.
+Press `n` to skip to the next card without marking it either way. Press `b` to
+go back one card and undo its recorded state. Press `x` to save and exit
+keeping only cards marked with `k`. Press `p` to save and exit keeping failed
+cards plus unseen cards. Press `Escape` to exit without saving anything.
 
 
 Usage
@@ -63,6 +63,7 @@ the file.
 
 In `x` mode, "remaining cards" means only cards explicitly marked with `k`.
 In `p` mode, it means cards explicitly marked with `k` plus cards not yet seen.
+If a deck is only skipped and no cards are answered, its file is left unchanged.
 
 A deck file could look like this:
 

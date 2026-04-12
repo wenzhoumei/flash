@@ -50,6 +50,13 @@ enum {
 	SAVE_FAILED,
 };
 
+enum {
+	CARD_NEW,
+	CARD_OK,
+	CARD_FAIL,
+	CARD_SKIP,
+};
+
 #include "config.h"
 #include "prompt.h"
 
@@ -68,6 +75,7 @@ static int issep(const char *s);
 static int savecard(const Card *c);
 static void loaddeck(const char *path, int reset);
 static void next(int ok);
+static void skip(void);
 static void resetdeck(Deck *d);
 static void run(void);
 static void save(void);
@@ -217,8 +225,8 @@ int
 savecard(const Card *c)
 {
 	if (savemode == SAVE_PARTIAL)
-		return c->state != 1;
-	return c->state == 2;
+		return c->state != CARD_OK;
+	return c->state == CARD_FAIL;
 }
 
 void
@@ -423,15 +431,15 @@ back(void)
 	if (!cardidx)
 		return;
 	c = cards[cardidx - 1];
-	if (c->state == 1) {
+	if (c->state == CARD_OK) {
 		c->deck->succ--;
 		c->deck->att--;
-	} else if (c->state == 2) {
+	} else if (c->state == CARD_FAIL) {
 		c->deck->att--;
-	} else {
+	} else if (c->state != CARD_SKIP) {
 		return;
 	}
-	c->state = 0;
+	c->state = CARD_NEW;
 	cardidx--;
 	flipped = seenanswer = 0;
 	draw();
@@ -440,10 +448,21 @@ back(void)
 void
 next(int ok)
 {
-	cards[cardidx]->state = ok ? 1 : 2;
+	cards[cardidx]->state = ok ? CARD_OK : CARD_FAIL;
 	cards[cardidx]->deck->att++;
 	if (ok)
 		cards[cardidx]->deck->succ++;
+	flipped = seenanswer = 0;
+	if (++cardidx >= cardcount)
+		running = 0;
+	else
+		draw();
+}
+
+void
+skip(void)
+{
+	cards[cardidx]->state = CARD_SKIP;
 	flipped = seenanswer = 0;
 	if (++cardidx >= cardcount)
 		running = 0;
@@ -476,6 +495,8 @@ save(void)
 	timestamp(stamp, sizeof(stamp));
 	for (i = 0; i < deckcount; i++) {
 		d = &decks[i];
+		if (!d->att)
+			continue;
 		left = 0;
 		for (j = 0; j < d->ncards; j++)
 			if (savecard(d->cards[j]))
@@ -609,6 +630,8 @@ run(void)
 				next(0);
 			} else if (sym == XK_b) {
 				back();
+			} else if (sym == XK_n) {
+				skip();
 			} else if (sym == XK_x) {
 				savemode = SAVE_FAILED;
 				running = 0;

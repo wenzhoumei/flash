@@ -81,8 +81,10 @@ flipped once.
 .It Sy k
 Mark the current card failed and go to the next card after it has been flipped
 once.
+.It Sy n
+Go to the next card without marking it remembered or failed.
 .It Sy b
-Go back one card and undo its recorded answer.
+Go back one card and undo its recorded state.
 .It Sy p
 Quit early and save failed cards plus unseen cards.
 .It Sy x
@@ -106,6 +108,10 @@ also accepts separator lines:
 \&\#\ SEP 2026-04-11T22:00:00 1/2/3
 \&\#\ SEP
 .Ed
+.Pp
+If a deck is only skipped and no cards are answered,
+.Nm
+leaves that file unchanged.
 .Sh CUSTOMIZATION
 .Nm
 can be customized by creating a custom config.h and (re)compiling the
