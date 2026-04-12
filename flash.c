@@ -46,8 +46,8 @@ typedef struct {
 } XWindow;
 
 enum {
-	KEEP_NOTJ,
-	KEEP_K,
+	SAVE_PARTIAL,
+	SAVE_FAILED,
 };
 
 #include "config.h"
@@ -64,7 +64,7 @@ static void draw(void);
 static XftFont *fitfont(const char *s, char ***lines, size_t *nlines, int *maxw);
 static void freelines(char **lines, size_t nlines);
 static int issep(const char *s);
-static int keepcard(const Card *c);
+static int savecard(const Card *c);
 static void loaddeck(const char *path, int reset);
 static void next(int ok);
 static void resetdeck(Deck *d);
@@ -89,7 +89,7 @@ static GC gc;
 static XftDraw *drawctx;
 static XftColor fg, bg;
 static XftFont *fonts[NUMFONTSCALES];
-static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, keepmode;
+static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, savemode;
 
 void
 die(const char *fmt, ...)
@@ -149,7 +149,7 @@ usage(int status)
 	fprintf(fp,
 	        "usage: %s -h\n"
 	        "       %s -p\n"
-	        "       %s [-r] [-j | -k] deck ...\n",
+	        "       %s [-r] deck ...\n",
 	        argv0, argv0, argv0);
 	exit(status);
 }
@@ -213,9 +213,9 @@ issep(const char *s)
 }
 
 int
-keepcard(const Card *c)
+savecard(const Card *c)
 {
-	if (keepmode == KEEP_NOTJ)
+	if (savemode == SAVE_PARTIAL)
 		return c->state != 1;
 	return c->state == 2;
 }
@@ -455,7 +455,7 @@ save(void)
 		d = &decks[i];
 		left = 0;
 		for (j = 0; j < d->ncards; j++)
-			if (keepcard(d->cards[j]))
+			if (savecard(d->cards[j]))
 				left++;
 		if (d->att == (int)d->ncards)
 			snprintf(meta, sizeof(meta), "%d/%d", d->succ, d->att);
@@ -480,7 +480,7 @@ save(void)
 			fprintf(fp, "%s\n", d->lines[j]);
 		fprintf(fp, "# SEP %s %s\n", stamp, meta);
 		for (j = 0; j < d->ncards; j++) {
-			if (!keepcard(d->cards[j]))
+			if (!savecard(d->cards[j]))
 				continue;
 			fprintf(fp, "%s:::%s\n", d->cards[j]->q, d->cards[j]->a);
 		}
@@ -572,6 +572,9 @@ run(void)
 			if (sym == XK_Escape) {
 				dosave = 0;
 				running = 0;
+			} else if (sym == XK_p) {
+				savemode = SAVE_PARTIAL;
+				running = 0;
 			} else if (sym == XK_space) {
 				if (!flipped)
 					seenanswer = 1;
@@ -582,6 +585,7 @@ run(void)
 			} else if (sym == XK_k && seenanswer) {
 				next(0);
 			} else if (sym == XK_x) {
+				savemode = SAVE_FAILED;
 				running = 0;
 			}
 		}
@@ -632,7 +636,7 @@ main(int argc, char *argv[])
 		usage(1);
 
 	reset = 0;
-	keepmode = defaultkeep;
+	savemode = closemode;
 	for (argi = 1; argi < argc && argv[argi][0] == '-' && argv[argi][1]; argi++) {
 		if (!strcmp(argv[argi], "-h")) {
 			usage(0);
@@ -641,10 +645,6 @@ main(int argc, char *argv[])
 			return 0;
 		} else if (!strcmp(argv[argi], "-r")) {
 			reset = 1;
-		} else if (!strcmp(argv[argi], "-j")) {
-			keepmode = KEEP_NOTJ;
-		} else if (!strcmp(argv[argi], "-k")) {
-			keepmode = KEEP_K;
 		} else {
 			usage(1);
 		}

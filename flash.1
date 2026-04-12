@@ -11,8 +11,6 @@
 .Op Fl p
 .Nm
 .Op Fl r
-.Op Fl j
-.Op Fl k
 .Ar deck ...
 .Sh DESCRIPTION
 .Nm
@@ -41,26 +39,21 @@ At the end of the run it rewrites that separator and, if needed, appends a new
 bottom retry layer followed by a trailing
 .Dq \&\#\ SEP .
 .Pp
+Closing the window without pressing
+.Sy p ,
+.Sy x ,
+or
+.Sy Escape
+uses the compile-time
+.Va closemode
+from
+.Pa config.h .
+.Pp
 If
 .Fl r
 is given,
 .Nm
 first drops every layer below the top one before studying.
-.Pp
-By default,
-.Nm
-keeps only cards explicitly marked with
-.Sy k
-in the retry layer.
-If
-.Fl j
-is given, it keeps every card not explicitly marked with
-.Sy j ,
-including unseen cards when exiting early.
-If
-.Fl k
-is given, it keeps only cards explicitly marked with
-.Sy k .
 .Pp
 If
 .Fl h
@@ -73,14 +66,6 @@ prints usage information and exits.
 Print usage information and exit.
 .It Fl p
 Print the compiled-in LLM deck-generation prompt and exit.
-.It Fl j
-Keep every card not explicitly marked with
-.Sy j
-in the retry layer.
-.It Fl k
-Keep only cards explicitly marked with
-.Sy k
-in the retry layer.
 .It Fl r
 Reset each deck back to its top layer before studying.
 .El
@@ -96,8 +81,10 @@ flipped once.
 .It Sy k
 Mark the current card failed and go to the next card after it has been flipped
 once.
+.It Sy p
+Quit early and save failed cards plus unseen cards.
 .It Sy x
-Quit early and save progress.
+Quit early and save only cards explicitly marked failed.
 .It Sy Escape
 Quit immediately without saving.
 .El
