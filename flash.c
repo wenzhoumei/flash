@@ -158,7 +158,7 @@ usage(int status)
 	fprintf(fp,
 	        "usage: %s -h\n"
 	        "       %s -p\n"
-	        "       %s [-r] deck ...\n",
+	        "       %s [-o] [-r] deck ...\n",
 	        argv0, argv0, argv0);
 	exit(status);
 }
@@ -676,7 +676,7 @@ cleanup(void)
 int
 main(int argc, char *argv[])
 {
-	int argi, i, ndecks, reset;
+	int argi, i, ndecks, ordered, reset;
 
 	setlocale(LC_CTYPE, "");
 	argv0 = argv[0];
@@ -684,6 +684,7 @@ main(int argc, char *argv[])
 		usage(1);
 
 	reset = 0;
+	ordered = 0;
 	savemode = closemode;
 	for (argi = 1; argi < argc && argv[argi][0] == '-' && argv[argi][1]; argi++) {
 		if (!strcmp(argv[argi], "-h")) {
@@ -691,6 +692,8 @@ main(int argc, char *argv[])
 		} else if (!strcmp(argv[argi], "-p")) {
 			fputs(prompt, stdout);
 			return 0;
+		} else if (!strcmp(argv[argi], "-o")) {
+			ordered = 1;
 		} else if (!strcmp(argv[argi], "-r")) {
 			reset = 1;
 		} else {
@@ -707,7 +710,8 @@ main(int argc, char *argv[])
 	if (!cardcount)
 		die("no cards loaded");
 
-	shuffle();
+	if (!ordered)
+		shuffle();
 	xinit();
 	run();
 	if (dosave)

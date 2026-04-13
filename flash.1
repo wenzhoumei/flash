@@ -10,6 +10,7 @@
 .Nm
 .Op Fl p
 .Nm
+.Op Fl o
 .Op Fl r
 .Ar deck ...
 .Sh DESCRIPTION
@@ -26,6 +27,12 @@ is given,
 prints the LLM deck-generation prompt compiled from
 .Pa PROMPT.txt
 and exits.
+.Pp
+If
+.Fl o
+is given,
+.Nm
+keeps cards in deck order instead of shuffling them.
 .Pp
 When a deck contains stack separators of the form
 .Dq \&\#\ SEP timestamp success/attempt[/total] ,
@@ -66,6 +73,8 @@ prints usage information and exits.
 Print usage information and exit.
 .It Fl p
 Print the compiled-in LLM deck-generation prompt and exit.
+.It Fl o
+Keep cards in deck order instead of shuffling them.
 .It Fl r
 Reset each deck back to its top layer before studying.
 .El

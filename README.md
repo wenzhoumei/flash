@@ -30,13 +30,14 @@ Usage
 
 	flash -h
 	flash -p
-	flash [-r] DECK ...
+	flash [-o] [-r] DECK ...
 
 `-h` prints usage. `-p` prints the compiled-in LLM deck-generation prompt.
+`-o` keeps cards in deck order instead of shuffling them.
 `-r` resets each deck back to its top layer before studying it.
 
-If one or more deck arguments are given, they are shuffled together for study.
-Each deck is still saved back to itself.
+If one or more deck arguments are given, they are shuffled together for study
+unless `-o` is used. Each deck is still saved back to itself.
 
 The retry behavior depends on how you exit:
 
