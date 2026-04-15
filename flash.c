@@ -104,7 +104,7 @@ static XftDraw *drawctx;
 static XftColor fg, bg;
 static XftFont *fonts[NUMFONTSCALES];
 static char *cliptext;
-static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, savemode;
+static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, savemode, frozen;
 
 void
 die(const char *fmt, ...)
@@ -164,7 +164,7 @@ usage(int status)
 	fprintf(fp,
 	        "usage: %s -h\n"
 	        "       %s -p\n"
-	        "       %s [-o | -s] [-r] deck ...\n",
+	        "       %s [-f] [-o | -s] [-r] deck ...\n",
 	        argv0, argv0, argv0);
 	exit(status);
 }
@@ -754,6 +754,7 @@ main(int argc, char *argv[])
 		usage(1);
 
 	reset = 0;
+	frozen = 0;
 	ordered = !defaultshuffle;
 	savemode = closemode;
 	for (argi = 1; argi < argc && argv[argi][0] == '-' && argv[argi][1]; argi++) {
@@ -766,6 +767,8 @@ main(int argc, char *argv[])
 			ordered = 1;
 		} else if (!strcmp(argv[argi], "-s")) {
 			ordered = 0;
+		} else if (!strcmp(argv[argi], "-f")) {
+			frozen = 1;
 		} else if (!strcmp(argv[argi], "-r")) {
 			reset = 1;
 		} else {
@@ -786,7 +789,7 @@ main(int argc, char *argv[])
 		shuffle();
 	xinit();
 	run();
-	if (dosave)
+	if (dosave && !frozen)
 		save();
 	cleanup();
 	return 0;

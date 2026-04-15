@@ -32,9 +32,10 @@ Usage
 
 	flash -h
 	flash -p
-	flash [-o | -s] [-r] DECK ...
+	flash [-f] [-o | -s] [-r] DECK ...
 
 `-h` prints usage. `-p` prints the compiled-in LLM deck-generation prompt.
+`-f` studies in frozen mode and leaves deck files unchanged.
 `-o` keeps cards in deck order.
 `-s` shuffles cards.
 `-r` resets each deck back to its top layer before studying it.
@@ -42,6 +43,9 @@ Usage
 Whether cards are shuffled by default is set at compile time in `config.h` with
 `defaultshuffle`. `-o` and `-s` override that default for a run. Each deck is
 still saved back to itself.
+
+With `-f`, no stack metadata is rewritten and no cards are added to or removed
+from retry layers, regardless of how you exit.
 
 The retry behavior depends on how you exit:
 
