@@ -21,7 +21,8 @@ To get a little demo, just type
 
 You can flip with `Space`, then mark remembered with `j` or failed with `k`.
 Press `n` to skip to the next card without marking it either way. Press `b` to
-go back one card and undo its recorded state. Press `x` to save and exit
+go back one card and undo its recorded state; when you go back this way, `j`
+and `k` work immediately without flipping again. Press `x` to save and exit
 keeping only cards marked with `k`. Press `p` to save and exit keeping failed
 cards plus unseen cards. Press `Escape` to exit without saving anything. Click
 the window to copy the current card as `question:::answer`.

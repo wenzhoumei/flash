@@ -500,7 +500,8 @@ back(void)
 	}
 	c->state = CARD_NEW;
 	cardidx--;
-	flipped = seenanswer = 0;
+	flipped = 0;
+	seenanswer = 1;
 	draw();
 }
 
