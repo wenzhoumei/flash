@@ -6,3 +6,7 @@ Rules:
 - Make sure to cover all content, but skip admin and lecturer-specific
   content.
 - Do not refer to "the lecture", "the slide", "the demo", or similar.
+- Do not target a fixed or round number of cards; let deck length vary with the
+  density of the material.
+- Do not pad a deck with generic background or near-duplicate cards just to
+  increase the card count.
