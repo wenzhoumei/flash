@@ -41,6 +41,9 @@ typedef struct {
 	Window win;
 	Visual *vis;
 	Colormap cmap;
+	Atom clip;
+	Atom targets;
+	Atom utf8;
 	Atom wmdeletewin;
 	int scr, w, h, uw, uh;
 } XWindow;
@@ -67,6 +70,7 @@ static char *estrdup(const char *s);
 static void addcard(Deck *d, const char *s);
 static void addline(Deck *d, const char *s);
 static void cleanup(void);
+static void copycard(const Card *c, Time t);
 static void draw(void);
 static void back(void);
 static XftFont *fitfont(const char *s, char ***lines, size_t *nlines, int *maxw);
@@ -79,6 +83,7 @@ static void skip(void);
 static void resetdeck(Deck *d);
 static void run(void);
 static void save(void);
+static void selrequest(XSelectionRequestEvent *xsr);
 static void shuffle(void);
 static int startswith(const char *s, const char *prefix);
 static int textwidth(XftFont *font, const char *s);
@@ -98,6 +103,7 @@ static GC gc;
 static XftDraw *drawctx;
 static XftColor fg, bg;
 static XftFont *fonts[NUMFONTSCALES];
+static char *cliptext;
 static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, savemode;
 
 void
@@ -158,7 +164,7 @@ usage(int status)
 	fprintf(fp,
 	        "usage: %s -h\n"
 	        "       %s -p\n"
-	        "       %s [-o] [-r] deck ...\n",
+	        "       %s [-o | -s] [-r] deck ...\n",
 	        argv0, argv0, argv0);
 	exit(status);
 }
@@ -424,6 +430,59 @@ draw(void)
 }
 
 void
+copycard(const Card *c, Time t)
+{
+	size_t len;
+
+	len = strlen(c->q) + strlen(c->a) + 4;
+	free(cliptext);
+	cliptext = ecalloc(len, 1);
+	snprintf(cliptext, len, "%s:::%s", c->q, c->a);
+	XSetSelectionOwner(xw.dpy, XA_PRIMARY, xw.win, t);
+	XSetSelectionOwner(xw.dpy, xw.clip, xw.win, t);
+	XFlush(xw.dpy);
+}
+
+void
+selrequest(XSelectionRequestEvent *xsr)
+{
+	XSelectionEvent sev;
+	Atom prop, type, list[3];
+	int n;
+
+	memset(&sev, 0, sizeof(sev));
+	sev.type = SelectionNotify;
+	sev.display = xsr->display;
+	sev.requestor = xsr->requestor;
+	sev.selection = xsr->selection;
+	sev.target = xsr->target;
+	sev.time = xsr->time;
+	sev.property = None;
+
+	if (!cliptext)
+		goto done;
+	prop = xsr->property ? xsr->property : xsr->target;
+	if (xsr->target == xw.targets) {
+		n = 0;
+		list[n++] = xw.targets;
+		list[n++] = xw.utf8;
+		list[n++] = XA_STRING;
+		XChangeProperty(xw.dpy, xsr->requestor, prop, XA_ATOM, 32,
+		                PropModeReplace, (unsigned char *)list, n);
+		sev.property = prop;
+	} else if (xsr->target == xw.utf8 || xsr->target == XA_STRING) {
+		type = xsr->target == xw.utf8 ? xw.utf8 : XA_STRING;
+		XChangeProperty(xw.dpy, xsr->requestor, prop, type, 8,
+		                PropModeReplace, (unsigned char *)cliptext,
+		                strlen(cliptext));
+		sev.property = prop;
+	}
+
+done:
+	XSendEvent(xw.dpy, xsr->requestor, False, 0, (XEvent *)&sev);
+}
+
+void
 back(void)
 {
 	Card *c;
@@ -562,11 +621,16 @@ xinit(void)
 	xw.h = DisplayHeight(xw.dpy, xw.scr);
 	xw.uw = usablewidth * xw.w;
 	xw.uh = usableheight * xw.h;
+	xw.clip = XInternAtom(xw.dpy, "CLIPBOARD", False);
+	xw.targets = XInternAtom(xw.dpy, "TARGETS", False);
+	xw.utf8 = XInternAtom(xw.dpy, "UTF8_STRING", False);
 	xw.win = XCreateSimpleWindow(xw.dpy, RootWindow(xw.dpy, xw.scr),
 	                             0, 0, xw.w, xw.h, 0,
 	                             BlackPixel(xw.dpy, xw.scr),
 	                             WhitePixel(xw.dpy, xw.scr));
-	XSelectInput(xw.dpy, xw.win, KeyPressMask | ExposureMask | StructureNotifyMask);
+	XSelectInput(xw.dpy, xw.win,
+	             KeyPressMask | ButtonPressMask |
+	             ExposureMask | StructureNotifyMask);
 	xw.wmdeletewin = XInternAtom(xw.dpy, "WM_DELETE_WINDOW", False);
 	XSetWMProtocols(xw.dpy, xw.win, &xw.wmdeletewin, 1);
 	if (!XftColorAllocName(xw.dpy, xw.vis, xw.cmap, fgcolor, &fg) ||
@@ -608,6 +672,10 @@ run(void)
 			xw.uw = usablewidth * xw.w;
 			xw.uh = usableheight * xw.h;
 			draw();
+		} else if (ev.type == ButtonPress) {
+			copycard(cards[cardidx], ev.xbutton.time);
+		} else if (ev.type == SelectionRequest) {
+			selrequest(&ev.xselectionrequest);
 		} else if (ev.type == ClientMessage) {
 			if ((Atom)ev.xclient.data.l[0] == xw.wmdeletewin)
 				running = 0;
@@ -659,6 +727,7 @@ cleanup(void)
 	}
 	free(cards);
 	free(decks);
+	free(cliptext);
 
 	for (i = 0; i < NUMFONTSCALES; i++)
 		if (fonts[i])
@@ -684,7 +753,7 @@ main(int argc, char *argv[])
 		usage(1);
 
 	reset = 0;
-	ordered = 0;
+	ordered = !defaultshuffle;
 	savemode = closemode;
 	for (argi = 1; argi < argc && argv[argi][0] == '-' && argv[argi][1]; argi++) {
 		if (!strcmp(argv[argi], "-h")) {
@@ -694,6 +763,8 @@ main(int argc, char *argv[])
 			return 0;
 		} else if (!strcmp(argv[argi], "-o")) {
 			ordered = 1;
+		} else if (!strcmp(argv[argi], "-s")) {
+			ordered = 0;
 		} else if (!strcmp(argv[argi], "-r")) {
 			reset = 1;
 		} else {

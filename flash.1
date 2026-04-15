@@ -10,7 +10,7 @@
 .Nm
 .Op Fl p
 .Nm
-.Op Fl o
+.Op Fl o | Fl s
 .Op Fl r
 .Ar deck ...
 .Sh DESCRIPTION
@@ -33,6 +33,12 @@ If
 is given,
 .Nm
 keeps cards in deck order instead of shuffling them.
+.Pp
+If
+.Fl s
+is given,
+.Nm
+shuffles cards.
 .Pp
 When a deck contains stack separators of the form
 .Dq \&\#\ SEP timestamp success/attempt[/total] ,
@@ -75,6 +81,8 @@ Print usage information and exit.
 Print the compiled-in LLM deck-generation prompt and exit.
 .It Fl o
 Keep cards in deck order instead of shuffling them.
+.It Fl s
+Shuffle cards.
 .It Fl r
 Reset each deck back to its top layer before studying.
 .El
@@ -100,6 +108,10 @@ Quit early and save failed cards plus unseen cards.
 Quit early and save only cards explicitly marked failed.
 .It Sy Escape
 Quit immediately without saving.
+.It Em Mouse
+Click anywhere in the window to copy the current card as
+.Dq question:::answer
+to the X clipboard.
 .El
 .El
 .Sh FORMAT
@@ -125,4 +137,9 @@ leaves that file unchanged.
 .Nm
 can be customized by creating a custom config.h and (re)compiling the
 source code.
+.Pp
+The default card ordering is controlled by
+.Va defaultshuffle
+in
+.Pa config.h .
 This keeps it fast, secure and simple.

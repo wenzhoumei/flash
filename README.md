@@ -23,21 +23,24 @@ You can flip with `Space`, then mark remembered with `j` or failed with `k`.
 Press `n` to skip to the next card without marking it either way. Press `b` to
 go back one card and undo its recorded state. Press `x` to save and exit
 keeping only cards marked with `k`. Press `p` to save and exit keeping failed
-cards plus unseen cards. Press `Escape` to exit without saving anything.
+cards plus unseen cards. Press `Escape` to exit without saving anything. Click
+the window to copy the current card as `question:::answer`.
 
 
 Usage
 
 	flash -h
 	flash -p
-	flash [-o] [-r] DECK ...
+	flash [-o | -s] [-r] DECK ...
 
 `-h` prints usage. `-p` prints the compiled-in LLM deck-generation prompt.
-`-o` keeps cards in deck order instead of shuffling them.
+`-o` keeps cards in deck order.
+`-s` shuffles cards.
 `-r` resets each deck back to its top layer before studying it.
 
-If one or more deck arguments are given, they are shuffled together for study
-unless `-o` is used. Each deck is still saved back to itself.
+Whether cards are shuffled by default is set at compile time in `config.h` with
+`defaultshuffle`. `-o` and `-s` override that default for a run. Each deck is
+still saved back to itself.
 
 The retry behavior depends on how you exit:
 
