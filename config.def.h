@@ -1,7 +1,5 @@
 static char *fontfallbacks[] = {
-	"dejavu sans",
-	"roboto",
-	"ubuntu",
+	"noto sans math",
 };
 
 #define NUMFONTSCALES 42
