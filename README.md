@@ -40,8 +40,8 @@ Usage
 `-s` shuffles cards.
 `-r` resets each deck back to its top layer before studying it.
 
-Whether cards are shuffled by default is set at compile time in `config.h` with
-`defaultshuffle`. `-o` and `-s` override that default for a run. Each deck is
+Whether cards are ordered by default is set at compile time in `config.h` with
+`defaultshuffle = 0`. `-o` and `-s` override that default for a run. Each deck is
 still saved back to itself.
 
 With `-f`, no stack metadata is rewritten and no cards are added to or removed
