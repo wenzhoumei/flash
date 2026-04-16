@@ -290,12 +290,8 @@ loaddeck(const char *path, int reset)
 	}
 	if (d->actstart >= d->actend)
 		die("no active cards in '%s'", d->path);
-
-	for (i = d->actstart; i < d->actend; i++) {
-		if (issep(d->lines[i]))
-			die("malformed stack in '%s'", d->path);
+	for (i = d->actstart; i < d->actend; i++)
 		addcard(d, d->lines[i]);
-	}
 }
 
 void
@@ -550,7 +546,7 @@ save(void)
 	char meta[96];
 	FILE *fp;
 	Deck *d;
-	size_t i, j, left;
+	size_t i, j, left, tailstart;
 
 	timestamp(stamp, sizeof(stamp));
 	for (i = 0; i < deckcount; i++) {
@@ -570,18 +566,25 @@ save(void)
 			die("unable to open '%s' for writing:", d->path);
 		if (!left) {
 			if (!d->actstart) {
-				for (j = 0; j < d->actend; j++)
-					fprintf(fp, "%s\n", d->lines[j]);
+				for (j = 0; j < d->ncards; j++)
+					fprintf(fp, "%s:::%s\n", d->cards[j]->q, d->cards[j]->a);
 				fprintf(fp, "# SEP %s %s\n", stamp, meta);
 			} else {
 				for (j = 0; j < d->actstart; j++)
 					fprintf(fp, "%s\n", d->lines[j]);
 			}
+			tailstart = d->actend;
+			if (d->actstart && tailstart < d->nlines && issep(d->lines[tailstart]))
+				tailstart++;
+			for (j = tailstart; j < d->nlines; j++)
+				fprintf(fp, "%s\n", d->lines[j]);
 			fclose(fp);
 			continue;
 		}
-		for (j = 0; j < d->actend; j++)
+		for (j = 0; j < d->actstart; j++)
 			fprintf(fp, "%s\n", d->lines[j]);
+		for (j = 0; j < d->ncards; j++)
+			fprintf(fp, "%s:::%s\n", d->cards[j]->q, d->cards[j]->a);
 		fprintf(fp, "# SEP %s %s\n", stamp, meta);
 		for (j = 0; j < d->ncards; j++) {
 			if (!savecard(d->cards[j]))
