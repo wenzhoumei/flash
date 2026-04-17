@@ -13,6 +13,7 @@
 .Op Fl f
 .Op Fl o | Fl s
 .Op Fl r
+.Op Fl t
 .Ar deck ...
 .Sh DESCRIPTION
 .Nm
@@ -76,6 +77,12 @@ is given,
 first drops every layer below the top one before studying.
 .Pp
 If
+.Fl t
+is given,
+.Nm
+trims away a fully cleared bottom retry layer instead of keeping it in place.
+.Pp
+If
 .Fl h
 is given,
 .Nm
@@ -94,6 +101,8 @@ Keep cards in deck order instead of shuffling them.
 Shuffle cards.
 .It Fl r
 Reset each deck back to its top layer before studying.
+.It Fl t
+Trim away a fully cleared bottom retry layer instead of keeping it.
 .El
 .Sh USAGE
 .Bl -tag -width Ds

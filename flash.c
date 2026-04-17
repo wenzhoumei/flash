@@ -104,7 +104,7 @@ static XftDraw *drawctx;
 static XftColor fg, bg;
 static XftFont *fonts[NUMFONTSCALES];
 static char *cliptext;
-static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, savemode, frozen;
+static int running = 1, flipped = 0, dosave = 1, seenanswer = 0, savemode, frozen, trimdone;
 
 void
 die(const char *fmt, ...)
@@ -164,7 +164,7 @@ usage(int status)
 	fprintf(fp,
 	        "usage: %s -h\n"
 	        "       %s -p\n"
-	        "       %s [-f] [-o | -s] [-r] deck ...\n",
+	        "       %s [-f] [-o | -s] [-r] [-t] deck ...\n",
 	        argv0, argv0, argv0);
 	exit(status);
 }
@@ -565,17 +565,22 @@ save(void)
 		if (!(fp = fopen(d->path, "w")))
 			die("unable to open '%s' for writing:", d->path);
 		if (!left) {
-			if (!d->actstart) {
+			if (!d->actstart || !trimdone) {
+				for (j = 0; j < d->actstart; j++)
+					fprintf(fp, "%s\n", d->lines[j]);
 				for (j = 0; j < d->ncards; j++)
 					fprintf(fp, "%s:::%s\n", d->cards[j]->q, d->cards[j]->a);
 				fprintf(fp, "# SEP %s %s\n", stamp, meta);
+				tailstart = d->actend;
+				if (tailstart < d->nlines && issep(d->lines[tailstart]))
+					tailstart++;
 			} else {
 				for (j = 0; j < d->actstart; j++)
 					fprintf(fp, "%s\n", d->lines[j]);
+				tailstart = d->actend;
+				if (tailstart < d->nlines && issep(d->lines[tailstart]))
+					tailstart++;
 			}
-			tailstart = d->actend;
-			if (d->actstart && tailstart < d->nlines && issep(d->lines[tailstart]))
-				tailstart++;
 			for (j = tailstart; j < d->nlines; j++)
 				fprintf(fp, "%s\n", d->lines[j]);
 			fclose(fp);
@@ -758,6 +763,7 @@ main(int argc, char *argv[])
 
 	reset = 0;
 	frozen = 0;
+	trimdone = 0;
 	ordered = !defaultshuffle;
 	savemode = closemode;
 	for (argi = 1; argi < argc && argv[argi][0] == '-' && argv[argi][1]; argi++) {
@@ -774,6 +780,8 @@ main(int argc, char *argv[])
 			frozen = 1;
 		} else if (!strcmp(argv[argi], "-r")) {
 			reset = 1;
+		} else if (!strcmp(argv[argi], "-t")) {
+			trimdone = 1;
 		} else {
 			usage(1);
 		}

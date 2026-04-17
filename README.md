@@ -32,13 +32,14 @@ Usage
 
 	flash -h
 	flash -p
-	flash [-f] [-o | -s] [-r] DECK ...
+	flash [-f] [-o | -s] [-r] [-t] DECK ...
 
 `-h` prints usage. `-p` prints the compiled-in LLM deck-generation prompt.
 `-f` studies in frozen mode and leaves deck files unchanged.
 `-o` keeps cards in deck order.
 `-s` shuffles cards.
 `-r` resets each deck back to its top layer before studying it.
+`-t` trims away a fully cleared bottom retry layer instead of keeping it.
 
 Whether cards are ordered by default is set at compile time in `config.h` with
 `defaultshuffle = 0`. `-o` and `-s` override that default for a run. Each deck is
@@ -67,8 +68,9 @@ If not all cards in that layer were attempted, flash writes
 At the end of a run, flash rewrites the separator below the studied layer to
 store that layer's metadata. If there are cards to retry under the chosen exit
 mode, flash appends those cards and a new trailing `# SEP`. If you clear the
-entire bottom layer, flash removes it instead, unless it is the top layer of
-the file.
+entire bottom layer, flash keeps that layer by default and just updates its
+metadata. Pass `-t` if you want a fully cleared bottom retry layer removed
+instead.
 
 In `x` mode, "remaining cards" means only cards explicitly marked with `k`.
 In `p` mode, it means cards explicitly marked with `k` plus cards not yet seen.
